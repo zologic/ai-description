@@ -63,12 +63,12 @@ OUTPUT: BELANGRIJK: Geef ALLEEN geldige JSON terug. Geen markdown code blokken (
         $attrs  = !empty($product_data['attributes']) ? implode(', ', $product_data['attributes']) : 'niet opgegeven';
 
         $output = match($mode) {
-            'meta_only'  => '{ "meta_description": "110–155 tekens, neutraal informatief, bevat primair zoekwoord uit de titel eenmaal. Geen CTA-taal." }',
-            'short_only' => '{ "short_description": "40–90 woorden. 1 inleidende zin + 3–5 <ul><li> bulletpoints met neutrale producteigenschappen. Geen claims." }',
+            'meta_only'  => '{ "meta_description": "VEREIST: 110–155 tekens. Neutraal informatief, bevat primair zoekwoord uit de titel eenmaal. Geen CTA-taal." }',
+            'short_only' => '{ "short_description": "VEREIST: 40–90 woorden. 1 inleidende zin + 3–5 <ul><li> bulletpoints met neutrale producteigenschappen. Geen claims." }',
             default      => '{
-  "short_description": "40–90 woorden. 1 inleidende zin + 3–5 <ul><li> bulletpoints.",
-  "long_description": "Volledige HTML-beschrijving. Gebruik exact deze ' . count($headings) . ' <h3>-koppen in volgorde: ' . $h_list . '. Doellengte: ' . $cfg['min'] . '–' . $cfg['max'] . ' woorden. Gebruik <ul><li> voor lijsten.",
-  "meta_description": "110–155 tekens. Neutraal. Patroon: [Merk] [Producttype] – neutrale samenvatting. Geen CTA."
+  "short_description": "VEREIST: 40–90 woorden. 1 inleidende zin + 3–5 <ul><li> bulletpoints.",
+  "long_description": "Volledige HTML-beschrijving. Gebruik exact deze ' . count($headings) . ' <h3>-koppen in volgorde: ' . $h_list . '. MINIMAAL ' . $cfg['min'] . ' woorden VEREIST, ideaal ' . $cfg['max'] . ' woorden. Gebruik <ul><li> voor lijsten. Vul elke sectie met voldoende detail.",
+  "meta_description": "VEREIST: 110–155 tekens. Neutraal. Patroon: [Merk] [Producttype] – neutrale samenvatting. Geen CTA."
 }',
         };
 
@@ -78,7 +78,8 @@ OUTPUT: BELANGRIJK: Geef ALLEEN geldige JSON terug. Geen markdown code blokken (
                "Instructies:\n- Integreer merk en categorie logisch in de tekst.\n" .
                "- Verwerk kenmerken alleen indien expliciet aanwezig.\n" .
                "- Als kenmerken ontbreken, blijf algemeen binnen de categorie.\n" .
-               "- Houd de toon professioneel en helder.\n\n" .
+               "- Houd de toon professioneel en helder.\n" .
+               "- BELANGRIJK: Voldoe aan alle minimum lengte-eisen (woorden/tekens).\n\n" .
                "Genereer exact:\n{$output}";
     }
 
