@@ -179,6 +179,26 @@ class APDG_Generator {
             error_log('[APDG] Stripped markdown code fences from response');
         }
 
+        // Step 2.5: Remove unescaped control characters that cause JSON_ERROR_CTRL_CHAR
+        // Control characters (0x00-0x1F, 0x7F) must be escaped in JSON strings
+        // Replace tabs/newlines/carriage returns with spaces, remove others
+        $cleaned = preg_replace_callback(
+            '/[\x00-\x1F\x7F]/',
+            function($matches) {
+                $char = $matches[0];
+                return match(ord($char)) {
+                    9 => ' ',    // tab -> space
+                    10 => ' ',   // newline -> space
+                    13 => '',    // carriage return -> remove
+                    default => '', // other control chars -> remove
+                };
+            },
+            $cleaned
+        );
+        if (defined('WP_DEBUG') && WP_DEBUG && $cleaned !== preg_replace('/```(?:json)?\s*([\s\S]*?)```/', '$1', $raw)) {
+            error_log('[APDG] Cleaned control characters from response');
+        }
+
         // Step 3: First parse attempt
         $parsed = json_decode(trim($cleaned), true);
         $json_error = json_last_error();
