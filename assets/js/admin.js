@@ -103,10 +103,21 @@ jQuery(function ($) {
             $btn.prop('disabled', false).text('💾 Approve & Save');
             if (r.success) {
                 $('#apdg_preview_panel').hide();
-                $('#apdg_similarity_badge').text('✅ Opgeslagen').css({ background: '#2e7d32' }).show();
+                $('#apdg_similarity_badge')
+                    .html('✅ Opgeslagen! <a href="#" onclick="location.reload(); return false;" style="color:#fff;text-decoration:underline;margin-left:8px;">Pagina verversen</a>')
+                    .css({ background: '#2e7d32' })
+                    .show();
+
+                // Auto-refresh after 2 seconds to show changes in WooCommerce fields
+                setTimeout(function() {
+                    location.reload();
+                }, 2000);
             } else {
                 alert('Fout: ' + r.data);
             }
+        }).fail(function() {
+            $btn.prop('disabled', false).text('💾 Approve & Save');
+            alert('❌ Verbindingsfout. Probeer opnieuw.');
         });
     });
 
