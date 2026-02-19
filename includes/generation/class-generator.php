@@ -73,6 +73,50 @@ class APDG_Generator {
         return self::validate($result, $tier);
     }
 
+    /**
+     * Calculate appropriate max_tokens based on tier and mode.
+     *
+     * @param string $tier high|mid|low
+     * @param string $mode full|short_only|meta_only
+     * @return int Token limit appropriate for tier and mode
+     */
+    private static function get_max_tokens_for_tier(string $tier, string $mode = 'full'): int {
+        // Mode-specific optimization for reduced-scope generation
+        if ($mode === 'short_only') {
+            return 600; // Short description only: ~90 words + system prompt + buffer
+        }
+        if ($mode === 'meta_only') {
+            return 300; // Meta description only: ~155 chars + system prompt + buffer
+        }
+
+        // Tier-based limits for full mode
+        // Calculations based on:
+        // - Dutch text: ~1.5-2 tokens per word
+        // - HTML tags: ~100 tokens
+        // - System prompt: ~200 tokens
+        // - Safety buffer: ~200 tokens per tier
+        switch ($tier) {
+            case 'high':
+                // 350-550 words long_description + 90 words short + meta + HTML + buffer
+                return 1800;
+
+            case 'mid':
+                // 200-350 words long_description + 90 words short + meta + HTML + buffer
+                return 1400;
+
+            case 'low':
+                // 120-180 words long_description + 90 words short + meta + HTML + buffer
+                return 1000;
+
+            default:
+                // Unknown tier - default to mid-tier value and log warning
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("[APDG] Unknown tier '{$tier}', defaulting to mid (1400 tokens)");
+                }
+                return 1400;
+        }
+    }
+
     private static function call_api(
         string $api_key,
         string $model,
@@ -94,7 +138,7 @@ class APDG_Generator {
                     ['role' => 'user',   'content' => APDG_Prompt_Builder::user($product_data, $tier, $mode)],
                 ],
                 'temperature' => 0.35,
-                'max_tokens'  => 2000,
+                'max_tokens'  => self::get_max_tokens_for_tier($tier, $mode),
             ]),
         ]);
 
@@ -113,20 +157,199 @@ class APDG_Generator {
             return $err;
         }
 
-        $raw     = $body['choices'][0]['message']['content'] ?? '';
+        // Step 1: Extract and log raw response
+        $raw = $body['choices'][0]['message']['content'] ?? '';
+
+        if (empty($raw)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[APDG] Empty API response - no content returned');
+            }
+            return new WP_Error('empty_response', 'API returned empty response');
+        }
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            $max_tokens_used = self::get_max_tokens_for_tier($tier, $mode);
+            error_log("[APDG] Raw API response length: " . strlen($raw) . " chars | max_tokens: {$max_tokens_used}");
+            error_log("[APDG] Response preview: " . substr($raw, 0, 500));
+        }
+
+        // Step 2: Clean markdown code fences
         $cleaned = preg_replace('/```(?:json)?\s*([\s\S]*?)```/', '$1', $raw);
-        $parsed  = json_decode(trim($cleaned), true);
-
-        if (!$parsed) {
-            preg_match('/\{.*\}/s', $cleaned, $m);
-            $parsed = json_decode($m[0] ?? '', true);
+        if ($cleaned !== $raw && defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[APDG] Stripped markdown code fences from response');
         }
 
-        if (!$parsed) {
-            return new WP_Error('parse_error', 'Kon API-respons niet verwerken: ' . substr($raw, 0, 200));
+        // Step 3: First parse attempt
+        $parsed = json_decode(trim($cleaned), true);
+        $json_error = json_last_error();
+        $json_error_msg = json_last_error_msg();
+
+        if ($parsed !== null && $json_error === JSON_ERROR_NONE) {
+            // Success on first attempt
+            return $parsed;
         }
 
-        return $parsed;
+        // Step 4: JSON repair attempt
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("[APDG] First JSON parse failed: {$json_error_msg} (Code: {$json_error})");
+            error_log('[APDG] Attempting JSON repair...');
+        }
+
+        $repaired = self::attempt_json_repair($cleaned);
+        $parsed = json_decode($repaired, true);
+        $json_error = json_last_error();
+
+        if ($parsed !== null && $json_error === JSON_ERROR_NONE) {
+            // Repair succeeded
+            return $parsed;
+        }
+
+        // Step 5: Regex fallback parser
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[APDG] JSON repair failed, trying regex fallback...');
+        }
+
+        preg_match('/\{.*\}/s', $cleaned, $m);
+        if (!empty($m[0])) {
+            $parsed = json_decode($m[0], true);
+            $json_error = json_last_error();
+
+            if ($parsed !== null && $json_error === JSON_ERROR_NONE) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[APDG] Warning: Used regex fallback parser successfully');
+                }
+                return $parsed;
+            }
+        }
+
+        // Step 6: All parsing attempts failed - enhanced error logging
+        $json_error_msg = json_last_error_msg();
+        $json_error_code = json_last_error();
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[APDG] JSON parse FAILED - all strategies exhausted');
+            error_log("[APDG] JSON Error: {$json_error_msg} (Code: {$json_error_code})");
+            error_log("[APDG] Tier: {$tier} | Mode: {$mode} | Model: {$model}");
+            error_log("[APDG] Raw response (" . strlen($raw) . " chars): {$raw}");
+        }
+
+        $error = new WP_Error(
+            'json_parse_error',
+            "JSON parsing failed: {$json_error_msg}. Response: " . substr($raw, 0, 300)
+        );
+
+        $error->add_data([
+            'raw_response' => $raw,
+            'json_error' => $json_error_msg,
+            'json_error_code' => $json_error_code,
+            'tier' => $tier,
+            'mode' => $mode,
+            'model' => $model,
+        ], 'json_parse_error');
+
+        return $error;
+    }
+
+    /**
+     * Attempt to repair common JSON formatting/truncation issues.
+     *
+     * @param string $json_string Potentially malformed JSON
+     * @return string Repaired JSON if successful, original string otherwise
+     */
+    private static function attempt_json_repair(string $json_string): string {
+        $json_string = trim($json_string);
+
+        if (empty($json_string)) {
+            return $json_string;
+        }
+
+        // Fast path: If already valid, return immediately
+        $test = json_decode($json_string, true);
+        if ($test !== null && json_last_error() === JSON_ERROR_NONE) {
+            return $json_string;
+        }
+
+        // Strategy 1: Fix missing closing braces
+        $open_braces  = substr_count($json_string, '{');
+        $close_braces = substr_count($json_string, '}');
+        $open_brackets  = substr_count($json_string, '[');
+        $close_brackets = substr_count($json_string, ']');
+
+        if ($open_braces > $close_braces || $open_brackets > $close_brackets) {
+            $repaired = $json_string;
+            $repaired .= str_repeat(']', $open_brackets - $close_brackets);
+            $repaired .= str_repeat('}', $open_braces - $close_braces);
+
+            $test = json_decode($repaired, true);
+            if ($test !== null && json_last_error() === JSON_ERROR_NONE) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[APDG] JSON repair succeeded: Fixed missing closing braces/brackets');
+                }
+                return $repaired;
+            }
+        }
+
+        // Strategy 2: Close truncated string values and add missing braces
+        if (!str_ends_with($json_string, '}') && !str_ends_with($json_string, '"')) {
+            // String was likely cut off mid-value
+            $repaired = $json_string . '"';
+
+            // Now add missing closing braces
+            $open_braces  = substr_count($repaired, '{');
+            $close_braces = substr_count($repaired, '}');
+            $repaired .= str_repeat('}', $open_braces - $close_braces);
+
+            $test = json_decode($repaired, true);
+            if ($test !== null && json_last_error() === JSON_ERROR_NONE) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[APDG] JSON repair succeeded: Closed truncated string');
+                }
+                return $repaired;
+            }
+        }
+
+        // Strategy 3: Remove trailing commas before closing braces/brackets
+        $repaired = preg_replace('/,\s*([}\]])/', '$1', $json_string);
+        if ($repaired !== $json_string) {
+            $test = json_decode($repaired, true);
+            if ($test !== null && json_last_error() === JSON_ERROR_NONE) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[APDG] JSON repair succeeded: Removed trailing commas');
+                }
+                return $repaired;
+            }
+        }
+
+        // Strategy 4: Fix unescaped quotes in Dutch text (conservative approach)
+        // Look for patterns like: "text"middle_quote"text" and escape middle quote
+        $repaired = preg_replace_callback(
+            '/"([^"]*)"([^",:\}\]]*)"/',
+            function($matches) {
+                // Only fix if middle section doesn't look like a key/value separator
+                if (!str_contains($matches[2], ':') && strlen($matches[2]) < 10) {
+                    return '"' . $matches[1] . '\\"' . $matches[2] . '"';
+                }
+                return $matches[0];
+            },
+            $json_string
+        );
+
+        if ($repaired !== $json_string) {
+            $test = json_decode($repaired, true);
+            if ($test !== null && json_last_error() === JSON_ERROR_NONE) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[APDG] JSON repair succeeded: Fixed unescaped quotes');
+                }
+                return $repaired;
+            }
+        }
+
+        // All repair strategies failed
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[APDG] JSON repair failed: All strategies exhausted');
+        }
+
+        return $json_string; // Return original
     }
 
     private static function validate(array $data, string $tier) {

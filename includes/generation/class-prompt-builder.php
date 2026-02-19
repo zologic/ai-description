@@ -45,7 +45,7 @@ INHOUDSREGELS:
 7. Varieer zinsopbouw en vermijd herhalende standaardzinnen.
 8. Als productdata beperkt is, beschrijf het product op categorieniveau zonder details te verzinnen.
 
-OUTPUT: Geef uitsluitend geldige JSON terug. Geen markdown. Geen uitleg buiten de JSON.';
+OUTPUT: BELANGRIJK: Geef ALLEEN geldige JSON terug. Geen markdown code blokken (geen ``` tekens). Geen uitleg of tekst buiten de JSON. Begin direct met { en eindig met }. Zorg dat alle tekst binnen strings correct is afgesloten met dubbele quotes.';
 
     public static function system(): string {
         return self::SYSTEM_PROMPT;
