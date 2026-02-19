@@ -432,10 +432,10 @@ class APDG_Admin_UI {
                 </select>
             </div>
             <div class="apdg-row">
-                <button class="button button-primary" id="apdg_generate_btn" <?php echo $locked ? 'disabled' : ''; ?> data-pid="<?php echo $pid; ?>">
+                <button type="button" class="button button-primary" id="apdg_generate_btn" <?php echo $locked ? 'disabled' : ''; ?> data-pid="<?php echo $pid; ?>">
                     ⚡ Generate Preview
                 </button>
-                <button class="button" id="apdg_lock_btn" data-pid="<?php echo $pid; ?>" data-locked="<?php echo $locked ? '1' : '0'; ?>">
+                <button type="button" class="button" id="apdg_lock_btn" data-pid="<?php echo $pid; ?>" data-locked="<?php echo $locked ? '1' : '0'; ?>">
                     <?php echo $locked ? '🔓 Unlock' : '🔒 Lock'; ?>
                 </button>
                 <span id="apdg_spinner" style="display:none; margin-left:8px;">Generating…</span>
@@ -446,9 +446,9 @@ class APDG_Admin_UI {
 
             <div id="apdg_preview_panel" style="display:none; margin-top:16px;">
                 <div class="apdg-diff-tabs">
-                    <button class="apdg-tab active" data-tab="short">Short</button>
-                    <button class="apdg-tab" data-tab="long">Long</button>
-                    <button class="apdg-tab" data-tab="meta">Meta</button>
+                    <button type="button" class="apdg-tab active" data-tab="short">Short</button>
+                    <button type="button" class="apdg-tab" data-tab="long">Long</button>
+                    <button type="button" class="apdg-tab" data-tab="meta">Meta</button>
                 </div>
                 <?php foreach (['short','long','meta'] as $f): ?>
                 <div class="apdg-tab-panel" id="tab_<?php echo $f; ?>" style="display:<?php echo $f==='short'?'block':'none'; ?>">
@@ -469,8 +469,8 @@ class APDG_Admin_UI {
                 <?php endforeach; ?>
 
                 <div style="margin-top:12px;">
-                    <button class="button button-primary" id="apdg_save_btn" data-pid="<?php echo $pid; ?>">💾 Approve &amp; Save</button>
-                    <button class="button" id="apdg_discard_btn">Discard</button>
+                    <button type="button" class="button button-primary" id="apdg_save_btn" data-pid="<?php echo $pid; ?>">💾 Approve &amp; Save</button>
+                    <button type="button" class="button" id="apdg_discard_btn">Discard</button>
                 </div>
             </div>
 
