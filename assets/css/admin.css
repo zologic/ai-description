@@ -1,0 +1,113 @@
+/* ── APDG Admin Styles v6 ────────────────────────────────────────────────── */
+
+.apdg-wrap { max-width: 1200px; }
+
+/* Cards */
+.apdg-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+.apdg-card h3 { margin-top: 0; font-size: 15px; }
+
+/* Top row layout */
+.apdg-top-row { display: flex; gap: 16px; flex-wrap: wrap; }
+.apdg-top-row .apdg-card { flex: 1; min-width: 280px; }
+
+/* Filter row */
+.apdg-filter-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+/* Badges */
+.apdg-badge { padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; }
+.apdg-badge.high  { background: #e8f5e9; color: #2e7d32; }
+.apdg-badge.mid   { background: #fff8e1; color: #f57f17; }
+.apdg-badge.low   { background: #f5f5f5; color: #555; }
+
+/* ── Audit stats ─────────────────────────────────────────────────────────── */
+.apdg-audit-stats { display: flex; gap: 12px; margin: 14px 0; flex-wrap: wrap; }
+.apdg-stat-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 100px;
+}
+.apdg-stat-card.green  { border-color: #7ad03a; background: #f0f9e8; }
+.apdg-stat-card.orange { border-color: #ffc107; background: #fff8e1; }
+.apdg-stat-card.red    { border-color: #dc3232; background: #fef0f0; }
+.apdg-stat-num { font-size: 28px; font-weight: 700; line-height: 1.2; }
+.apdg-stat-lbl { font-size: 12px; color: #666; margin-top: 4px; text-align: center; }
+
+/* ── Similarity zone bar ─────────────────────────────────────────────────── */
+.apdg-similarity-zones { display: flex; gap: 6px; margin: 12px 0; }
+.apdg-zone-bar { padding: 6px 10px; font-size: 12px; font-weight: 600; border-radius: 4px; }
+.apdg-zone-bar.allow { background: #e8f5e9; color: #2e7d32; }
+.apdg-zone-bar.warn  { background: #fff8e1; color: #f57f17; }
+.apdg-zone-bar.block { background: #fce4ec; color: #c62828; }
+
+/* ── Queue stat row ──────────────────────────────────────────────────────── */
+.apdg-stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+.apdg-stat     { font-size: 13px; font-weight: 600; color: #555; }
+.apdg-stat.green  { color: #2e7d32; }
+.apdg-stat.orange { color: #f57f17; }
+.apdg-stat.red    { color: #dc3232; }
+
+/* ── Rollout phase guide ─────────────────────────────────────────────────── */
+.apdg-phases { display: flex; gap: 8px; }
+.apdg-phase {
+    flex: 1;
+    background: #f6f7f7;
+    border-radius: 4px;
+    padding: 10px;
+    text-align: center;
+    font-size: 12px;
+}
+.apdg-phase strong { display: block; font-size: 18px; color: #2271b1; }
+
+/* ── Product tab panel ───────────────────────────────────────────────────── */
+.apdg-product-panel { padding: 16px; }
+.apdg-panel-header  { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+.apdg-panel-header h3 { margin: 0; }
+.apdg-last-gen { font-size: 12px; color: #888; }
+
+.apdg-lock-notice {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+}
+
+.apdg-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.apdg-row label { width: 80px; font-weight: 600; font-size: 13px; }
+
+/* ── Diff viewer ─────────────────────────────────────────────────────────── */
+.apdg-diff-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+.apdg-tab {
+    padding: 5px 14px;
+    border: 1px solid #ddd;
+    background: #f6f7f7;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+.apdg-tab.active { background: #2271b1; color: #fff; border-color: #2271b1; }
+
+.apdg-diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.apdg-diff-col  { display: flex; flex-direction: column; }
+.apdg-diff-label { font-size: 12px; font-weight: 600; color: #888; margin-bottom: 4px; }
+.apdg-diff-content {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    min-height: 120px;
+    font-size: 13px;
+    background: #fff;
+}
+.apdg-editable { outline: none; }
+.apdg-editable:focus { border-color: #2271b1; box-shadow: 0 0 0 1px #2271b1; }
